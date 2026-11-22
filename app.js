@@ -296,19 +296,45 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Sending...';
 
-      setTimeout(function () {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Send Message';
-        statusText.textContent =
-          'Thank you, ' +
-          nameVal +
-          '. Your inquiry regarding "' +
-          topicVal +
-          '" has been recorded for rachel@novoresume.com.';
-        statusBox.removeAttribute('hidden');
-        form.reset();
-        counterEl.textContent = '0 / 1000';
-      }, 180);
+      var formData = new FormData(form);
+      var encoded = new URLSearchParams(formData).toString();
+
+      fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: encoded
+      })
+        .then(function (response) {
+          var isLocalOrPreview =
+            window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname.indexOf('run.app') !== -1;
+
+          if (!response.ok && !isLocalOrPreview) {
+            throw new Error('Submission failed');
+          }
+
+          statusText.textContent =
+            'Thank you, ' +
+            nameVal +
+            '. Your inquiry regarding "' +
+            topicVal +
+            '" has been sent to rachel@novoresume.com.';
+          statusBox.removeAttribute('hidden');
+          form.reset();
+          counterEl.textContent = '0 / 1000';
+        })
+        .catch(function () {
+          setFieldError(
+            messageInput,
+            messageError,
+            'Unable to send right now. Please email rachel@novoresume.com directly.'
+          );
+        })
+        .finally(function () {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Send Message';
+        });
     });
 
     resetBtn.addEventListener('click', function () {
